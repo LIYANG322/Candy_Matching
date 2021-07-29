@@ -95,3 +95,109 @@ Match3.Board.prototype.checkAdjacent = function(source, target) {
     var isAdjacent = (diffRow == 1 && diffCol === 0) || (diffRow == 0 && diffCol === 1)
     return isAdjacent;
 };
+
+Match3.Board.prototype.isChained = function(block) {
+    var isChained = false;
+    var variation = this.grid[block.row][block.col];
+    var row = block.row;
+    var col = block.col;
+
+    if(variation == this.grid[row][col - 1] && variation == this.grid[row][col - 2]) {
+        isChained = true;
+    }
+
+    if(variation == this.grid[row][col + 1] && variation == this.grid[row][col + 2]) {
+        isChained = true;
+    }
+
+    if(this.grid[row - 2]) {
+        if(variation == this.grid[row - 1][col] && variation == this.grid[row - 2][col]) {
+            isChained = true;
+        }
+    }
+
+    if(this.grid[row + 2]) {
+        if(variation == this.grid[row + 1][col] && variation == this.grid[row + 2][col]) {
+            isChained = true;
+        }
+    }
+
+    if(variation == this.grid[row][col - 1] && variation == this.grid[row][col + 2]) {
+        isChained = true;
+    }
+
+    if(this.grid[row + 1] && this.grid[row - 1]) {
+        if(variation == this.grid[row + 1][col] && variation == this.grid[row - 1][col]) {
+            isChained = true;
+        }
+    }
+
+    return isChained;
+    
+};
+
+Match3.Board.prototype.findAllChains = function() {
+    var chained = [];
+    var i, j;
+
+    for(i = 0; i < this.rows; i++) {
+        for(j = 0; j < this.cols; j++) {
+            if(this.isChained({row: i, col: j})) {
+                chained.push({row: i, col: j});
+            }
+        }
+    }
+
+    console.log(chained);
+    return chained;
+};
+
+Match3.Board.prototype.clearChains = function() {
+    var chainedBlocks = this.findAllChains();
+
+    chainedBlocks.forEach(function(block){
+        this.grid[block.row][block.col] = 0;
+    }, this);
+};
+
+Match3.Board.prototype.dropBlock = function(sourceRow, targetRow, col) {
+    this.grid[targetRow][col] = this.grid[sourceRow][col];
+    this.grid[sourceRow][col] = 0;
+};
+
+Match3.Board.prototype.dropReserveBlock = function(sourceRow, targetRow, col) {
+    this.grid[targetRow][col] = this.reserveGrid[sourceRow][col];
+    this.reserveGrid[sourceRow][col] = 0;
+};
+
+Match3.Board.prototype.updateGrid = function() {
+    var i, j, k, foundBlock;
+
+    for(i = this.rows - 1; i >= 0; i--) {
+        for(j = 0; j < this.cols; j++) {
+            if(this.grid[i][j] === 0) {
+                foundBlock = false;
+
+                for(k = i - 1; k >= 0; k--) {
+                    if(this.grid[k][j] > 0) {
+                        this.dropBlock(k, i, j);
+                        foundBlock = true;
+                        break;
+                    }
+                }
+
+                if(!foundBlock) {
+                    for(k = this.RESERVE_ROW - 1; k >= 0; k--) {
+                        if(this.reserveGrid[k][j] > 0) {
+                            this.dropReserveBlock(k, i, j);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    this.populateReserveGrid();
+};
