@@ -43,6 +43,11 @@ Match3.Board.prototype.populateGrid = function() {
             this.grid[i][j] = variation;
         }
     }
+
+    var chains = this.findAllChains();
+    if(chains.length > 0) {
+        this.populateGrid();
+    }
 };
 
 Match3.Board.prototype.populateReserveGrid = function() {
@@ -86,6 +91,13 @@ Match3.Board.prototype.swap = function(source, target) {
     var temp = this.grid[target.row][target.col];
     this.grid[target.row][target.col] = this.grid[source.row][source.col];
     this.grid[source.row][source.col] = temp;
+
+    var tempPos = {row: source.row, col: source.col};
+    source.row = target.row;
+    source.col = target.col;
+
+    target.row = tempPos.row;
+    target.col = tempPos.col;
 };
 
 Match3.Board.prototype.checkAdjacent = function(source, target) {
@@ -122,7 +134,7 @@ Match3.Board.prototype.isChained = function(block) {
         }
     }
 
-    if(variation == this.grid[row][col - 1] && variation == this.grid[row][col + 2]) {
+    if(variation == this.grid[row][col - 1] && variation == this.grid[row][col + 1]) {
         isChained = true;
     }
 
@@ -148,7 +160,6 @@ Match3.Board.prototype.findAllChains = function() {
         }
     }
 
-    console.log(chained);
     return chained;
 };
 

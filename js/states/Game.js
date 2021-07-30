@@ -17,6 +17,7 @@ Match3.GameState = {
         this.board.consoleLog();
 
         this.drawBoard();
+
     },
     createBlock: function(x, y, data) {
         var block = this.blocks.getFirstExists(false);
@@ -85,5 +86,81 @@ Match3.GameState = {
         var blockMovement = this.game.add.tween(block);
         blockMovement.to({y: targetY}, this.ANIMATION_TIME);
         blockMovement.start();
+    },
+    swapBlocks: function(block1, block2) {
+
+        block1.scale.setTo(1);
+
+        var block1Movement = this.game.add.tween(block1);
+        block1Movement.to({x: block2.x, y: block2.y}, this.ANIMATION_TIME);
+        block1Movement.onComplete.add(function(){
+            this.board.swap(block1, block2);
+
+            if(!this.isReversingSwap) {
+                var chains = this.board.findAllChains();
+
+                if(chains.length > 0) {
+                    this.updateBoard();
+                }
+                else{
+                    this.isReversingSwap = true;
+                    this.swapBlocks(block1, block2);
+                }
+            }
+            else{
+                this.isReversingSwap = false;
+                this.clearSelection();
+            }
+            
+        }, this);
+        block1Movement.start();
+
+        var block2Movement = this.game.add.tween(block1);
+        block2Movement.to({x: block1.x, y:block1.y}, this.ANIMATION_TIME);
+        block2Movement.start();
+    },
+    pickBlock: function(block) {
+        if(this.isBoardBlocked) {
+            return;
+        }
+
+        if(!this.selectedBlock) {
+            block.scale.setTo(1.5);
+
+            this.selectedBlock = block;
+        }
+        else{
+            this.targetBlock = block;
+
+            if(this.board.checkAdjacent(this.selectedBlock, this.targetBlock)) {
+                this.isBoardBlocked = true;
+
+                this.swapBlocks(this.selectedBlock, this.targetBlock);
+            }
+            else{
+                this.clearSelection();
+            }
+        }
+    },
+    clearSelection: function() {
+        this.isBoardBlocked = false;
+        this.selectedBlock = null;
+        this.blocks.setAll('scale.x', 1);
+        this.blocks.setAll('scale.y', 1);
+    },
+    updateBoard: function() {
+        this.board.clearChains();
+        this.board.updateGrid();
+
+        this.game.time.events.add(this.ANIMATION_TIME, function() {
+            var chains = this.board.findAllChains();
+
+            if(chains.length > 0) {
+                this.updateBoard();
+            }
+            else{
+                this.clearSelection();
+            }
+        }, this);
     }
 };
